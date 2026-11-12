@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Qwen Image Studio">
+  <rect width="64" height="64" rx="14" fill="#ff6a00"/>
+  <!-- picture frame -->
+  <rect x="12" y="14" width="40" height="36" rx="5" fill="none" stroke="#fff" stroke-width="4"/>
+  <!-- sun and hills -->
+  <circle cx="24" cy="26" r="4" fill="#fff"/>
+  <path d="M14 46 L28 32 L36 40 L42 34 L50 42 V46 Z" fill="#fff"/>
+  <!-- generation sparkle -->
+  <path d="M47 6 L49.2 12.8 L56 15 L49.2 17.2 L47 24 L44.8 17.2 L38 15 L44.8 12.8 Z" fill="#fff" stroke="#ff6a00" stroke-width="2" stroke-linejoin="round"/>
+</svg>

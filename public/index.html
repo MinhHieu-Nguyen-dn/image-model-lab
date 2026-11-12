@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Qwen Image Studio</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Navigation">
+      <div class="brand"><span class="brand-org">Alibaba Cloud</span><span class="brand-product">Qwen Image Studio</span></div>
+      <div class="sidebar-section row between">
+        <span class="field-label">Projects</span>
+        <button id="new-project" type="button" class="icon-btn" title="New project" aria-label="New project">+</button>
+      </div>
+      <ul id="project-list" class="project-list"></ul>
+      <button id="open-settings" type="button" class="nav-item sidebar-settings">Global settings</button>
+    </aside>
+    <main id="main" class="main"></main>
+  </div>
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+</body>
+</html>
