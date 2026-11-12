@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { loadAuth, resolveEffective } from "../src/server/model-studio-auth-store.ts";
-import { createHarness, MOCK_GOOD_KEY, pngBytes, setupTask, type Harness } from "./helpers/test-harness.ts";
+import { createHarness, MOCK_GOOD_KEY, noisePng, pngBytes, setupTask, type Harness } from "./helpers/test-harness.ts";
 
 let h: Harness;
 beforeAll(async () => {
@@ -129,13 +129,13 @@ describe("reference upload caps", () => {
 
   test("total reference bytes per task are capped", async () => {
     const { tid } = await setupTask(h);
-    // A valid PNG header followed by padding stays under the 10MB per-file limit.
-    const big = new Uint8Array(9.9 * 1024 * 1024);
-    big.set(pngBytes(8, 8));
+    // Real ~5.9 MB incompressible images: under the 7 MB send limit (stored untouched), 7 of them exceed 40 MB.
+    const big = await noisePng(1400, 1400, 3);
+    expect(big.byteLength).toBeLessThan(7 * 1024 * 1024);
     const statuses: number[] = [];
-    for (let i = 0; i < 5; i++) statuses.push((await h.upload(tid, `big${i}.png`, big)).status);
-    expect(statuses.slice(0, 4)).toEqual([201, 201, 201, 201]);
-    expect(statuses[4]).toBe(413);
+    for (let i = 0; i < 7; i++) statuses.push((await h.upload(tid, `big${i}.png`, big)).status);
+    expect(statuses.slice(0, 6)).toEqual([201, 201, 201, 201, 201, 201]);
+    expect(statuses[6]).toBe(413);
   });
 });
 

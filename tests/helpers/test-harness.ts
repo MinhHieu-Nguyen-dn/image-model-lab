@@ -5,6 +5,7 @@
  */
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
+import sharp from "sharp";
 import { join } from "node:path";
 import { startApp, type RunningApp } from "../../src/server/app.ts";
 import { startMockModelStudio, solidPng, MOCK_GOOD_KEY } from "../../scripts/mock-model-studio.ts";
@@ -97,3 +98,10 @@ export async function setupTask(h: Harness, apiKey = MOCK_GOOD_KEY): Promise<{ p
 }
 
 export const pngBytes = (w = 64, h = 64, rgb: [number, number, number] = [200, 10, 10]) => new Uint8Array(solidPng(w, h, rgb));
+
+/** Incompressible PNG (random pixels) so its file size is close to width*height*channels bytes. */
+export async function noisePng(width: number, height: number, channels: 3 | 4): Promise<Uint8Array> {
+  const raw = new Uint8Array(width * height * channels);
+  for (let off = 0; off < raw.length; off += 65536) crypto.getRandomValues(raw.subarray(off, Math.min(off + 65536, raw.length)));
+  return new Uint8Array(await sharp(raw, { raw: { width, height, channels } }).png({ compressionLevel: 1 }).toBuffer());
+}
