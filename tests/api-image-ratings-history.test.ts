@@ -109,4 +109,72 @@ describe("image history", () => {
     expect(all.images.length).toBeGreaterThanOrEqual(4);
     expect((await h.api("GET", "/api/history?rating=love")).status).toBe(400);
   });
+
+  test("filters by task and prompt_extend, and splits each model's counts by prompt_extend", async () => {
+    const a = await setupTask(h);
+    const second = (await h.api("POST", `/api/projects/${a.pid}/tasks`, { name: "second" })).data.id;
+    await h.api("PATCH", `/api/tasks/${a.tid}`, { prompt: "x", size: "512*512", n: 2, promptExtend: true });
+    await h.api("PATCH", `/api/tasks/${second}`, { prompt: "y", size: "512*512", n: 1, promptExtend: false });
+    const on = await runOnce(a.tid, ["qwen-image-3.0"]);
+    const off = await runOnce(second, ["qwen-image-3.0"]);
+    await h.api("PATCH", `/api/tasks/${second}`, { promptExtend: true });
+    await runOnce(second, ["qwen-image-3.0"]);
+    await rate(on.id, "qwen-image-3.0", 0, "like");
+    await rate(off.id, "qwen-image-3.0", 0, "dislike");
+
+    const base = `/api/history?projectId=${a.pid}`;
+    const all = (await h.api("GET", base)).data;
+    expect(all.images).toHaveLength(4);
+    expect(all.tasks.map((t: any) => t.id).sort()).toEqual([a.tid, second].sort());
+
+    // Task filter narrows images and the summary.
+    const byTask = (await h.api("GET", `${base}&taskId=${second}`)).data;
+    expect(byTask.images).toHaveLength(2);
+    expect(byTask.images.every((i: any) => i.taskId === second)).toBe(true);
+    expect(byTask.models[0].images).toBe(2);
+    expect(byTask.tasks).toHaveLength(2);
+
+    // prompt_extend narrows images only; the summary keeps both halves of the split.
+    const extOn = (await h.api("GET", `${base}&promptExtend=true`)).data;
+    expect(extOn.images).toHaveLength(3);
+    const extOff = (await h.api("GET", `${base}&promptExtend=false`)).data;
+    expect(extOff.images).toHaveLength(1);
+    expect(extOff.images[0]).toMatchObject({ runId: off.id, image: { rating: "dislike" } });
+    const m = extOff.models[0];
+    expect(m).toMatchObject({ images: 4, likes: 1, dislikes: 1, unrated: 2 });
+    expect(m.promptExtend.on).toMatchObject({ images: 3, likes: 1, dislikes: 0, unrated: 2 });
+    expect(m.promptExtend.off).toMatchObject({ images: 1, likes: 0, dislikes: 1, unrated: 0 });
+
+    expect((await h.api("GET", `${base}&promptExtend=maybe`)).status).toBe(400);
+  });
+
+  test("accepts several projects and several tasks", async () => {
+    const a = await setupTask(h);
+    const b = await setupTask(h);
+    const c = await setupTask(h);
+    const second = (await h.api("POST", `/api/projects/${a.pid}/tasks`, { name: "second" })).data.id;
+    for (const t of [a.tid, b.tid, c.tid, second]) await h.api("PATCH", `/api/tasks/${t}`, { prompt: "x", size: "512*512", n: 1 });
+    for (const t of [a.tid, b.tid, c.tid, second]) await runOnce(t, ["qwen-image-3.0"]);
+
+    const count = async (query: string) => (await h.api("GET", `/api/history?${query}`)).data;
+
+    // Several projects: images, summary and task list cover exactly those projects.
+    const twoProjects = await count(`projectId=${a.pid}&projectId=${b.pid}`);
+    expect(twoProjects.images.map((i: any) => i.projectId).sort()).toEqual([a.pid, a.pid, b.pid].sort());
+    expect(twoProjects.models[0].images).toBe(3);
+    expect(twoProjects.tasks.map((t: any) => t.id).sort()).toEqual([a.tid, second, b.tid].sort());
+    expect(twoProjects.projects.map((p: any) => p.id)).toEqual(expect.arrayContaining([a.pid, b.pid, c.pid]));
+
+    // Several tasks, across projects.
+    const tasks = await count(`taskId=${second}&taskId=${c.tid}`);
+    expect(tasks.images.map((i: any) => i.taskId).sort()).toEqual([second, c.tid].sort());
+    expect(tasks.models[0].images).toBe(2);
+
+    // Project and task together intersect.
+    const both = await count(`projectId=${a.pid}&projectId=${b.pid}&taskId=${second}&taskId=${c.tid}`);
+    expect(both.images.map((i: any) => i.taskId)).toEqual([second]);
+
+    // A single value and empty values behave as before.
+    expect((await count(`projectId=${c.pid}&taskId=`)).images).toHaveLength(1);
+  });
 });

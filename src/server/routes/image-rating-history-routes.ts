@@ -1,6 +1,6 @@
 /** Image rating (like/dislike) and cross-run image history endpoints. */
 import { HttpError, json, readJsonObject } from "../http-utils.ts";
-import { listImageHistory, parseRatingFilter } from "../image-history-store.ts";
+import { listImageHistory, parseBooleanFilter, parseRatingFilter } from "../image-history-store.ts";
 import { parseRating, setImageRating } from "../image-rating-store.ts";
 import type { Router } from "../router.ts";
 
@@ -17,7 +17,9 @@ export function registerImageRatingHistoryRoutes(router: Router): void {
       const q = new URL(req.url).searchParams;
       return json(
         listImageHistory(ctx, {
-          projectId: q.get("projectId") || undefined,
+          projectIds: q.getAll("projectId").filter(Boolean),
+          taskIds: q.getAll("taskId").filter(Boolean),
+          promptExtend: parseBooleanFilter("promptExtend", q.get("promptExtend")),
           modelKey: q.get("model") || undefined,
           rating: parseRatingFilter(q.get("rating")),
         }),
