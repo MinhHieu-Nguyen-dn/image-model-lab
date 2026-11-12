@@ -8,6 +8,7 @@ import { catalogModel } from './app-state.js';
 import { reportError, showToast } from './toast-notifications.js';
 import { flushAutosave } from './task-autosave.js';
 import { openModal } from './modal-dialogs.js';
+import { openReferenceGallery } from './image-gallery-lightbox.js';
 import { formatBytes } from './format-helpers.js';
 
 /** Collapsible pretty-printed JSON block (null when there is nothing to show). */
@@ -46,7 +47,7 @@ function renderCompiled(data, task) {
         ? h('ol', { class: 'compiled-ref-order' }, refOrder.map((id, i) => {
           const ref = refsById.get(id);
           return h('li', {},
-            ref ? h('img', { src: ref.url, alt: '' }) : null,
+            ref ? h('img', { src: ref.url, alt: '', class: 'zoomable', title: 'Click to enlarge', onClick: () => openReferenceGallery(refOrder.map((rid) => refsById.get(rid)), i) }) : null,
             h('span', {}, `image ${i + 1}: ${ref?.filename ?? id}`),
             ref ? h('small', { class: 'muted' }, ` ${formatBytes(ref.bytes)}`) : null);
         }))

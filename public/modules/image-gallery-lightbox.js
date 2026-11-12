@@ -1,16 +1,18 @@
 /**
- * Full-size image viewer for the images of one model result. Arrow buttons (or ←/→) move
- * between images, and the like/dislike buttons (or the L / K keys) rate the image on screen.
+ * Full-size image viewer. Arrow buttons (or ←/→) move between images. For the images of a model
+ * result the like/dislike buttons (or the L / K keys) rate the image on screen; items without a
+ * runId (reference images) are view-and-download only.
  * Keys are bound to the document while the viewer is open, so they keep working after a
  * click moved focus onto a button that then became disabled.
  */
 import { h } from './dom-helpers.js';
 import { openModal } from './modal-dialogs.js';
 import { renderRatingButtons } from './image-rating-buttons.js';
+import { formatBytes } from './format-helpers.js';
 
 /**
- * @typedef {{url: string, title: string, caption?: string, image: {rating?: string},
- *   runId: string, modelKey: string, index: number}} GalleryItem
+ * @typedef {{url: string, title: string, caption?: string, image?: {rating?: string},
+ *   runId?: string, modelKey?: string, index?: number}} GalleryItem
  * @param {{items: GalleryItem[], index?: number, onRated?: (item: GalleryItem, rating: string|null) => void}} opts
  */
 export function openImageGallery({ items, index = 0, onRated }) {
@@ -27,13 +29,13 @@ export function openImageGallery({ items, index = 0, onRated }) {
   const download = h('a', { class: 'btn' }, 'Download');
   let ratings = null;
 
-  const hint = `${many ? '← → switch · ' : ''}L like · K dislike`;
+  const hintEl = h('p', { class: 'muted small lightbox-hint' });
   const content = h('figure', { class: 'lightbox' },
     h('div', { class: 'lightbox-stage' }, many ? prev : null, img, many ? next : null),
     h('figcaption', { class: 'lightbox-bar' },
       h('div', { class: 'row' }, many ? counter : null, caption),
       h('div', { class: 'row' }, ratingHost, download)),
-    h('p', { class: 'muted small lightbox-hint' }, hint));
+    hintEl);
 
   const modal = openModal({ title: '', content, wide: true, onClose: () => document.removeEventListener('keydown', onKey, true) });
   const heading = modal.dialog.querySelector('.modal-head h3');
@@ -49,11 +51,15 @@ export function openImageGallery({ items, index = 0, onRated }) {
     download.download = item.url.split('/').pop() || 'image.png';
     prev.disabled = current === 0;
     next.disabled = current === items.length - 1;
-    ratings = renderRatingButtons({
-      runId: item.runId, modelKey: item.modelKey, index: item.index, image: item.image,
-      onRated: (rating) => onRated?.(item, rating),
-    });
-    ratingHost.replaceChildren(ratings);
+    const rateable = item.runId !== undefined;
+    ratings = rateable
+      ? renderRatingButtons({
+        runId: item.runId, modelKey: item.modelKey, index: item.index, image: item.image,
+        onRated: (rating) => onRated?.(item, rating),
+      })
+      : null;
+    if (ratings) ratingHost.replaceChildren(ratings); else ratingHost.replaceChildren();
+    hintEl.textContent = [many && '← → switch', rateable && 'L like · K dislike'].filter(Boolean).join(' · ');
   }
 
   function go(step) {
@@ -77,4 +83,18 @@ export function openImageGallery({ items, index = 0, onRated }) {
 
   document.addEventListener('keydown', onKey, true);
   show();
+}
+
+/**
+ * Open reference images (numbered in their send order) in the viewer, starting at refs[index].
+ * Entries without a url (deleted references) are skipped but keep their number.
+ */
+export function openReferenceGallery(refs, index = 0) {
+  const numbered = refs.map((ref, i) => ({ ref, number: i + 1 })).filter(({ ref }) => ref?.url);
+  const items = numbered.map(({ ref, number }) => ({
+    url: ref.url,
+    title: `Reference image #${number}`,
+    caption: [ref.filename, ref.bytes ? formatBytes(ref.bytes) : ''].filter(Boolean).join(' · '),
+  }));
+  openImageGallery({ items, index: Math.max(numbered.findIndex(({ number }) => number === index + 1), 0) });
 }

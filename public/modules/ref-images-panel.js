@@ -9,6 +9,7 @@ import { reportError, showToast } from './toast-notifications.js';
 import { confirmAction } from './modal-dialogs.js';
 import { formatBytes } from './format-helpers.js';
 import { enqueueSerial } from './task-autosave.js';
+import { openReferenceGallery } from './image-gallery-lightbox.js';
 import { uploadRefFiles, imageFilesFrom, dragHasFiles, REF_ACCEPT } from './ref-upload.js';
 
 /** The panel of the currently mounted task receives pasted images. */
@@ -112,7 +113,11 @@ export function createRefImagesPanel({ task, onRefsChanged, onRefRemoved }) {
   function renderItem(ref, index) {
     const li = h('li', { class: 'ref-item', draggable: true, dataset: { refId: ref.id }, title: ref.filename },
       h('span', { class: 'ref-number' }, `#${index + 1}`),
-      h('img', { src: ref.url, alt: `Reference image ${index + 1}`, draggable: false, loading: 'lazy' }),
+      h('img', {
+        src: ref.url, alt: `Reference image ${index + 1}`, draggable: false, loading: 'lazy',
+        class: 'zoomable', title: 'Click to enlarge',
+        onClick: () => openReferenceGallery(task.refs ?? [], index),
+      }),
       h('span', { class: 'ref-name small' }, ref.filename),
       h('span', { class: 'ref-size muted small' }, formatBytes(ref.bytes)),
       h('button', {

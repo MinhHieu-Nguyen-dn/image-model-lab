@@ -2,6 +2,7 @@
  * Run history list (newest first) and the stored-inputs summary of a selected run.
  */
 import { h, clear, statusBadge } from './dom-helpers.js';
+import { openReferenceGallery } from './image-gallery-lightbox.js';
 import { formatDateTime, formatBytes, truncate } from './format-helpers.js';
 
 function countLabel(run) {
@@ -55,7 +56,7 @@ export function renderRunInputs(run) {
       h('dl', { class: 'metrics' }, rows.flatMap(([k, v]) => [h('dt', {}, k), h('dd', {}, String(v ?? '—'))])),
       refs.length
         ? h('ol', { class: 'compiled-ref-order' }, refs.map((ref, i) => h('li', {},
-          ref.url ? h('img', { src: ref.url, alt: '' }) : null,
+          ref.url ? h('img', { src: ref.url, alt: '', class: 'zoomable', title: 'Click to enlarge', onClick: () => openReferenceGallery(refs, i) }) : null,
           h('span', {}, `#${i + 1} ${ref.filename ?? ref.id}`),
           ref.bytes ? h('small', { class: 'muted' }, ` ${formatBytes(ref.bytes)}`) : null)))
         : h('p', { class: 'muted small' }, 'No reference images.')));

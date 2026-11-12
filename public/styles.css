@@ -330,6 +330,7 @@ details > summary { cursor: pointer; font-weight: 600; font-size: .85rem; paddin
 .compiled-ref-order { margin: 6px 0 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
 .compiled-ref-order li { display: flex; align-items: center; gap: 8px; font-size: .85rem; }
 .compiled-ref-order img { width: 36px; height: 36px; object-fit: cover; border-radius: 4px; }
+img.zoomable { cursor: zoom-in; }
 .compiled-model { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 .compiled-model.failed { border-color: var(--danger); }
 
