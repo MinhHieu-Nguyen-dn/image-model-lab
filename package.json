@@ -1,0 +1,17 @@
+{
+  "name": "qwen-image-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local studio for comparing Qwen Image models on Alibaba Cloud Model Studio",
+  "scripts": {
+    "start": "bun src/server/main.ts",
+    "mock": "bun scripts/mock-model-studio.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.7.3"
+  }
+}
