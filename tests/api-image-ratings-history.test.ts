@@ -177,4 +177,65 @@ describe("image history", () => {
     // A single value and empty values behave as before.
     expect((await count(`projectId=${c.pid}&taskId=`)).images).toHaveLength(1);
   });
+
+  test("downloads the filtered images as a ZIP", async () => {
+    const a = await setupTask(h);
+    const b = await setupTask(h);
+    for (const t of [a.tid, b.tid]) await h.api("PATCH", `/api/tasks/${t}`, { prompt: "x", size: "512*512", n: 2 });
+    const runA = await runOnce(a.tid, ["qwen-image-3.0"]);
+    await runOnce(b.tid, ["qwen-image-3.0"]);
+    await rate(runA.id, "qwen-image-3.0", 1, "like");
+
+    const fetchZip = async (query: string) => {
+      const res = await fetch(`${h.app.url}/api/history/download?${query}`);
+      return { res, bytes: new Uint8Array(await res.arrayBuffer()) };
+    };
+    /** Reads the stored entries from the central directory: name -> bytes. */
+    const unzip = (bytes: Uint8Array) => {
+      const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      const eocd = bytes.length - 22;
+      expect(view.getUint32(eocd, true)).toBe(0x06054b50);
+      const out = new Map<string, Uint8Array>();
+      let pos = view.getUint32(eocd + 16, true);
+      for (let i = 0; i < view.getUint16(eocd + 10, true); i++) {
+        expect(view.getUint32(pos, true)).toBe(0x02014b50);
+        const size = view.getUint32(pos + 24, true);
+        const nameLen = view.getUint16(pos + 28, true);
+        const local = view.getUint32(pos + 42, true);
+        const name = new TextDecoder().decode(bytes.subarray(pos + 46, pos + 46 + nameLen));
+        const start = local + 30 + view.getUint16(local + 26, true) + view.getUint16(local + 28, true);
+        const data = bytes.subarray(start, start + size);
+        expect(Bun.hash.crc32(data)).toBe(view.getUint32(pos + 16, true));
+        out.set(name, data);
+        pos += 46 + nameLen;
+      }
+      return out;
+    };
+
+    // Everything in scope: both tasks, two images each, with the exact image bytes.
+    const inA = await fetchZip(`projectId=${a.pid}`);
+    expect(inA.res.status).toBe(200);
+    expect(inA.res.headers.get("content-type")).toBe("application/zip");
+    expect(inA.res.headers.get("content-disposition")).toMatch(/^attachment; filename="history-images-\d{8}-\d{6}\.zip"$/);
+    const filesA = unzip(inA.bytes);
+    expect([...filesA.keys()].every((n) => n.split("/").length === 3)).toBe(true); // project/task/file
+    expect([...filesA.keys()].map((n) => n.split("/").pop()).sort()).toEqual([`${runA.id}_qwen-image-3.0-1.png`, `${runA.id}_qwen-image-3.0-2.png`]);
+    expect(filesA.size).toBe(2);
+    const listed = (await h.api("GET", `/api/history?projectId=${a.pid}`)).data.images;
+    for (const item of listed) {
+      const original = new Uint8Array(await (await fetch(`${h.app.url}${item.image.url}`)).arrayBuffer());
+      const entry = [...filesA].find(([name]) => name.endsWith(`${item.runId}_${item.modelKey}-${item.imageIndex + 1}.png`));
+      expect(entry?.[1]).toEqual(original);
+    }
+
+    // Only the images satisfying the filters are archived.
+    const liked = unzip((await fetchZip(`projectId=${a.pid}&rating=like`)).bytes);
+    expect([...liked.keys()].map((n) => n.split("/").pop())).toEqual([`${runA.id}_qwen-image-3.0-2.png`]);
+    const both = unzip((await fetchZip(`projectId=${a.pid}&projectId=${b.pid}`)).bytes);
+    expect(both.size).toBe(4);
+
+    // Nothing matches: a clear error rather than an empty archive; bad filters are rejected.
+    expect((await fetchZip(`projectId=${a.pid}&rating=dislike`)).res.status).toBe(404);
+    expect((await fetchZip("rating=love")).res.status).toBe(400);
+  });
 });
