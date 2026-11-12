@@ -62,8 +62,8 @@ export function startApp(opts: AppOptions): RunningApp {
     hostname: "127.0.0.1",
     port: opts.port,
     idleTimeout: 60,
-    // Largest legitimate body is a 10MB image upload plus multipart overhead.
-    maxRequestBodySize: 16 * 1024 * 1024,
+    // Largest legitimate body is a 50MB image upload (scaled down server-side) plus multipart overhead.
+    maxRequestBodySize: 64 * 1024 * 1024,
     async fetch(req) {
       const rejected = rejectForeignRequest(req, server.port ?? opts.port);
       if (rejected) return withFramingProtection(rejected);

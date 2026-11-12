@@ -10,8 +10,10 @@ import { newId, nowIso } from "./db.ts";
 import { HttpError } from "./http-utils.ts";
 import { fileUrl, refsDir } from "./paths.ts";
 import { readImageInfo } from "./image-meta.ts";
+import { fitReferenceImage, type ImageSummary } from "./ref-image-fitting.ts";
 
-export const MAX_REF_BYTES = 10 * 1024 * 1024;
+/** Largest file accepted on upload; anything above Model Studio's 10 MB input limit is scaled down on the way in. */
+export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 /** Highest per-model ref limit in the docs (2.1 series); every run base64-encodes all refs once per model. */
 export const MAX_REFS_PER_TASK = 10;
 export const MAX_TOTAL_REF_BYTES = 40 * 1024 * 1024;
@@ -63,15 +65,31 @@ function assertRoomForRef(existing: RefRow[], incomingBytes: number): void {
   }
 }
 
-export async function addRef(ctx: AppContext, pid: string, tid: string, file: File): Promise<RefJson> {
-  const filename = (file.name || "image").slice(0, 200);
-  const ext = extname(filename).slice(1).toLowerCase();
+/** Set when an upload had to be scaled down / re-encoded to satisfy Model Studio's input limits. */
+export interface RefResizeNote {
+  from: ImageSummary;
+  to: ImageSummary;
+}
+
+export type AddedRef = RefJson & { resized?: RefResizeNote };
+
+export async function addRef(ctx: AppContext, pid: string, tid: string, file: File): Promise<AddedRef> {
+  let filename = (file.name || "image").slice(0, 200);
+  let ext = extname(filename).slice(1).toLowerCase();
   if (!ALLOWED_EXTS.includes(ext)) throw new HttpError(400, `Unsupported file type '.${ext}'; allowed: jpg, jpeg, png, bmp, tiff, webp, gif`);
   if (file.size === 0) throw new HttpError(400, "File is empty");
-  if (file.size > MAX_REF_BYTES) throw new HttpError(413, "Reference image exceeds 10MB");
-  assertRoomForRef(rowsFor(ctx, tid), file.size);
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  if (!magicMatches(bytes, ext)) throw new HttpError(400, `File content is not a valid ${ext.toUpperCase()} image`);
+  if (file.size > MAX_UPLOAD_BYTES) throw new HttpError(413, `Reference image exceeds ${MAX_UPLOAD_BYTES / 1024 / 1024}MB`);
+  assertRoomForRef(rowsFor(ctx, tid), 0);
+  const original = new Uint8Array(await file.arrayBuffer());
+  if (!magicMatches(original, ext)) throw new HttpError(400, `File content is not a valid ${ext.toUpperCase()} image`);
+
+  // Oversized or over-dimensioned images are scaled down here, so what is stored (and later sent) always fits.
+  const fitted = await fitReferenceImage(original, ext, MIME_BY_EXT[ext]);
+  const bytes = fitted.bytes;
+  if (fitted.resized) {
+    ext = fitted.ext;
+    filename = `${filename.replace(/\.[^./\\]+$/, "")}.${ext}`;
+  }
 
   // Everything below is synchronous: the caps are re-checked against the current rows and the
   // file + row are written with no await in between, so parallel uploads and a task delete
@@ -93,7 +111,8 @@ export async function addRef(ctx: AppContext, pid: string, tid: string, file: Fi
     rmSync(abs, { force: true });
     throw err;
   }
-  return toJson(ctx, ctx.db.query<RefRow, [string]>("SELECT * FROM refs WHERE id = ?").get(id)!);
+  const json = toJson(ctx, ctx.db.query<RefRow, [string]>("SELECT * FROM refs WHERE id = ?").get(id)!);
+  return fitted.resized ? { ...json, resized: { from: fitted.from, to: fitted.to } } : json;
 }
 
 /** `ids` must be an exact permutation of the task's ref ids. */
