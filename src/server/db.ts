@@ -35,6 +35,12 @@ CREATE TABLE IF NOT EXISTS run_results (
   model_key TEXT NOT NULL, idx INTEGER NOT NULL, data TEXT NOT NULL,
   PRIMARY KEY (run_id, model_key)
 );
+CREATE TABLE IF NOT EXISTS image_ratings (
+  run_id TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+  model_key TEXT NOT NULL, img_idx INTEGER NOT NULL,
+  rating TEXT NOT NULL CHECK (rating IN ('like', 'dislike')), updated_at TEXT NOT NULL,
+  PRIMARY KEY (run_id, model_key, img_idx)
+);
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id);
 CREATE INDEX IF NOT EXISTS idx_refs_task ON refs(task_id);

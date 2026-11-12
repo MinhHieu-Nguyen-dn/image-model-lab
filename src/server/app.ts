@@ -12,6 +12,7 @@ import { rejectForeignRequest } from "./request-guard.ts";
 import { Router } from "./router.ts";
 import { recoverInterruptedRuns } from "./run-store.ts";
 import { registerCatalogCompileRunRoutes } from "./routes/catalog-compile-run-routes.ts";
+import { registerImageRatingHistoryRoutes } from "./routes/image-rating-history-routes.ts";
 import { registerAuthRoutes } from "./routes/model-studio-auth-routes.ts";
 import { registerProjectTaskRoutes } from "./routes/project-task-routes.ts";
 import { registerRefRoutes } from "./routes/ref-routes.ts";
@@ -45,6 +46,7 @@ export function buildRouter(): Router {
   registerRefRoutes(router);
   registerAuthRoutes(router);
   registerCatalogCompileRunRoutes(router);
+  registerImageRatingHistoryRoutes(router);
   return router;
 }
 

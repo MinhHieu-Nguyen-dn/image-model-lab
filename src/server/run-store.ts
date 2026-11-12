@@ -5,6 +5,7 @@
 import type { AppContext } from "./app-context.ts";
 import { nowIso } from "./db.ts";
 import { HttpError } from "./http-utils.ts";
+import { ratingsForRun } from "./image-rating-store.ts";
 import type { RefJson } from "./ref-store.ts";
 import type { UpstreamBody } from "./upstream-payload-builder.ts";
 
@@ -15,6 +16,8 @@ export interface ResultImage {
   width: number;
   height: number;
   bytes: number;
+  /** Merged in from the ratings table when a run is read; never stored in the result JSON. */
+  rating?: "like" | "dislike";
 }
 
 export interface ModelResult {
@@ -70,7 +73,9 @@ export function insertRun(ctx: AppContext, id: string, taskId: string, inputs: R
 
 /** Silently ignores runs deleted meanwhile (task deleted during a run). */
 export function saveResult(ctx: AppContext, runId: string, result: ModelResult): void {
-  ctx.db.query("UPDATE run_results SET data = ? WHERE run_id = ? AND model_key = ?").run(JSON.stringify(result), runId, result.modelKey);
+  // Ratings live in image_ratings; a rating merged in by assemble() must never be persisted here.
+  const stored = { ...result, images: result.images.map(({ rating: _rating, ...image }) => image) };
+  ctx.db.query("UPDATE run_results SET data = ? WHERE run_id = ? AND model_key = ?").run(JSON.stringify(stored), runId, result.modelKey);
 }
 
 /** False once the run (or its task/project) was deleted; runners use it to stop writing files. */
@@ -87,6 +92,13 @@ function assemble(ctx: AppContext, row: RunRow): RunJson {
     .query<{ data: string }, [string]>("SELECT data FROM run_results WHERE run_id = ? ORDER BY idx ASC")
     .all(row.id)
     .map((r) => JSON.parse(r.data) as ModelResult);
+  const ratings = ratingsForRun(ctx, row.id);
+  for (const result of results) {
+    result.images.forEach((image, i) => {
+      const rating = ratings.get(`${result.modelKey}#${i}`);
+      if (rating) image.rating = rating;
+    });
+  }
   return { id: row.id, taskId: row.task_id, createdAt: row.created_at, status: row.status, inputs: JSON.parse(row.inputs) as RunInputs, results };
 }
 
