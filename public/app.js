@@ -8,30 +8,36 @@ import { reportError } from './modules/toast-notifications.js';
 import { flushAutosave } from './modules/task-autosave.js';
 import { renderSidebar } from './modules/sidebar-and-task-tabs.js';
 import { mountSettingsView, mountProjectView } from './modules/main-views.js';
+import { mountHistoryView } from './modules/history-view.js';
 import {
-  loadCatalog, loadProjects, selectProject, openSettings, createProject,
+  loadCatalog, loadProjects, selectProject, openSettings, openHistory, createProject,
 } from './modules/navigation-controller.js';
 
 const projectList = document.getElementById('project-list');
 const main = document.getElementById('main');
 const settingsButton = document.getElementById('open-settings');
+const historyButton = document.getElementById('open-history');
 let disposeMain = null;
 
 function renderMain() {
   try { disposeMain?.(); } catch (err) { console.error('Dispose failed', err); }
   disposeMain = null;
   clear(main);
-  disposeMain = state.view === 'settings' ? mountSettingsView(main) : mountProjectView(main);
+  if (state.view === 'settings') disposeMain = mountSettingsView(main);
+  else if (state.view === 'history') disposeMain = mountHistoryView(main);
+  else disposeMain = mountProjectView(main);
 }
 
 on('projects', () => {
   renderSidebar(projectList);
   settingsButton.classList.toggle('active', state.view === 'settings');
+  historyButton.classList.toggle('active', state.view === 'history');
 });
 on('main', renderMain);
 
 document.getElementById('new-project').addEventListener('click', () => void createProject());
 settingsButton.addEventListener('click', () => void openSettings());
+historyButton.addEventListener('click', () => void openHistory());
 
 // Dropping a file outside a drop zone must not navigate the page away.
 const hasFiles = (e) => [...(e.dataTransfer?.types ?? [])].includes('Files');
@@ -53,6 +59,7 @@ async function boot() {
   const remembered = state.projects.find((p) => p.id === last?.projectId);
   if (remembered) state.projectId = remembered.id;
   if (last?.view === 'settings') await openSettings();
+  else if (last?.view === 'history') await openHistory();
   else if (remembered) await selectProject(remembered.id);
   else if (state.projects[0]) await selectProject(state.projects[0].id);
   else renderMain();

@@ -5,7 +5,7 @@
  */
 
 export const state = {
-  view: 'project', // 'project' | 'settings'
+  view: 'project', // 'project' | 'settings' | 'history'
   projects: [],
   projectId: null,
   tasks: [],

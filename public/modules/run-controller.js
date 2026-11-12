@@ -11,8 +11,25 @@ import { flushAutosave } from './task-autosave.js';
 const polling = new Set();
 const MAX_POLL_FAILURES = 10;
 
+/** Ratings saved this session, so a poll response read before the save cannot revert them. */
+const savedRatings = new Map();
+const ratingKey = (runId, modelKey, index) => `${runId}|${modelKey}|${index}`;
+
+function applySavedRatings(run) {
+  for (const result of run.results ?? []) {
+    (result.images ?? []).forEach((image, index) => {
+      const key = ratingKey(run.id, result.modelKey, index);
+      if (!savedRatings.has(key)) return;
+      const rating = savedRatings.get(key);
+      if (rating) image.rating = rating;
+      else delete image.rating;
+    });
+  }
+}
+
 function upsertRun(run) {
   if (!run || state.runsTaskId !== run.taskId) return;
+  applySavedRatings(run);
   const index = state.runs.findIndex((r) => r.id === run.id);
   if (index >= 0) state.runs[index] = run;
   else state.runs.unshift(run);
@@ -22,6 +39,18 @@ function summarize(run) {
   const results = run.results ?? [];
   const ok = results.filter((r) => r.status === 'ok').length;
   return { ok, failed: results.length - ok, total: results.length };
+}
+
+/**
+ * Mirror a saved rating into the loaded run history. Cards are reused across polls, so the
+ * image object a card mutated may no longer be the one held in state.runs.
+ */
+export function recordRating(runId, modelKey, index, rating) {
+  savedRatings.set(ratingKey(runId, modelKey, index), rating);
+  const image = state.runs.find((r) => r.id === runId)?.results?.find((r) => r.modelKey === modelKey)?.images?.[index];
+  if (!image) return;
+  if (rating) image.rating = rating;
+  else delete image.rating;
 }
 
 export function pollRun(runId) {

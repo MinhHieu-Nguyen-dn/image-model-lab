@@ -38,6 +38,14 @@ export async function openSettings() {
   emit('main');
 }
 
+export async function openHistory() {
+  await flushAutosave();
+  state.view = 'history';
+  memory.setLastView({ view: 'history', projectId: state.projectId });
+  emit('projects');
+  emit('main');
+}
+
 /** Open a project and restore its last open task (or the first one). */
 export async function selectProject(projectId) {
   await flushAutosave();

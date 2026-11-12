@@ -56,7 +56,8 @@ export function createRunResultsView({ onRerun }) {
     const next = new Map();
     results.forEach((result, index) => {
       const key = result.modelKey ?? String(index);
-      const json = JSON.stringify(result);
+      // Ratings are saved and shown by the card's own buttons; a changed rating must not rebuild the card.
+      const json = JSON.stringify(result, (k, v) => (k === 'rating' ? undefined : v));
       const existing = cards.get(key);
       const cardEl = existing && existing.json === json ? existing.el : renderResultCard(result, run);
       if (existing && existing.el !== cardEl) existing.el.replaceWith(cardEl);

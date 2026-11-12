@@ -7,10 +7,12 @@ import { h, statusBadge } from './dom-helpers.js';
 import { formatMs, formatBytes, formatCost, formatElapsed, toEpochMs } from './format-helpers.js';
 import { openLightbox } from './modal-dialogs.js';
 import { jsonDetails } from './compile-request-view.js';
+import { renderRatingButtons } from './image-rating-buttons.js';
+import { recordRating } from './run-controller.js';
 
 const ACTIVE_STATUSES = new Set(['pending', 'running']);
 
-function renderImages(result) {
+function renderImages(result, run) {
   const images = Array.isArray(result.images) ? result.images : [];
   if (!images.length) return null;
   return h('div', { class: `card-images count-${Math.min(images.length, 4)}` }, images.map((img, i) => {
@@ -22,7 +24,12 @@ function renderImages(result) {
         h('img', { src: img.url, alt: title, loading: 'lazy' })),
       h('figcaption', { class: 'row between small' },
         h('span', { class: 'muted' }, caption),
-        h('a', { href: img.url, download: img.url.split('/').pop() || 'image.png' }, 'Download')));
+        h('span', { class: 'row' },
+          renderRatingButtons({
+            runId: run.id, modelKey: result.modelKey, index: i, image: img,
+            onRated: (rating) => recordRating(run.id, result.modelKey, i, rating),
+          }),
+          h('a', { href: img.url, download: img.url.split('/').pop() || 'image.png' }, 'Download'))));
   }));
 }
 
@@ -47,11 +54,29 @@ function renderMetrics(result) {
     .flatMap(([k, v]) => [h('dt', {}, k), h('dd', { class: k === 'Request ID' ? 'mono' : '' }, String(v))]));
 }
 
-/** Render one card. `run` supplies createdAt for the running elapsed timer. */
+/**
+ * Everything a result shows below its images: metrics, omitted params, rewritten prompt and
+ * the raw usage / payload JSON. Shared by the run card and the history image detail.
+ */
+export function renderResultDetails(result) {
+  const omitted = result.omittedParams ?? [];
+  return [
+    ACTIVE_STATUSES.has(result.status) ? null : renderMetrics(result),
+    omitted.length ? h('p', { class: 'field-note' }, `Omitted params (not supported by this model): ${omitted.join(', ')}`) : null,
+    result.rewrittenPrompt
+      ? h('div', { class: 'rewritten' },
+        h('span', { class: 'field-label' }, `Rewritten prompt${result.rewriteStatus ? ` (${result.rewriteStatus})` : ''}`),
+        h('p', { class: 'text-block' }, result.rewrittenPrompt))
+      : null,
+    jsonDetails('Raw usage JSON', result.usage),
+    jsonDetails('Compiled request payload', result.payload),
+  ];
+}
+
+/** Render one card. `run` supplies id (ratings) and createdAt (running elapsed timer). */
 export function renderResultCard(result, run) {
   const active = ACTIVE_STATUSES.has(result.status);
   const since = toEpochMs(run.createdAt);
-  const omitted = result.omittedParams ?? [];
   return h('article', { class: `result-card result-${result.status}` },
     h('header', { class: 'result-card-head' },
       h('div', { class: 'result-title' },
@@ -65,14 +90,6 @@ export function renderResultCard(result, run) {
         h('span', { class: 'elapsed mono', dataset: { since: String(since) } }, formatElapsed(since)))
       : null,
     result.error ? h('p', { class: 'card-error', role: 'alert' }, result.error) : null,
-    renderImages(result),
-    active ? null : renderMetrics(result),
-    omitted.length ? h('p', { class: 'field-note' }, `Omitted params (not supported by this model): ${omitted.join(', ')}`) : null,
-    result.rewrittenPrompt
-      ? h('div', { class: 'rewritten' },
-        h('span', { class: 'field-label' }, `Rewritten prompt${result.rewriteStatus ? ` (${result.rewriteStatus})` : ''}`),
-        h('p', { class: 'text-block' }, result.rewrittenPrompt))
-      : null,
-    jsonDetails('Raw usage JSON', result.usage),
-    jsonDetails('Compiled request payload', result.payload));
+    renderImages(result, run),
+    renderResultDetails(result));
 }
