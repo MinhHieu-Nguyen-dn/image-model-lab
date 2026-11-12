@@ -2,3 +2,4 @@ images/
 node_modules/
 test-assets/
 .DS_Store
+plans/
