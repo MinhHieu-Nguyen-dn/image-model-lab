@@ -1,5 +1,5 @@
 /**
- * Modal dialogs built on native <dialog>: generic modal, text prompt, confirm, image lightbox.
+ * Modal dialogs built on native <dialog>: generic modal, text prompt, confirm. (The image viewer is image-gallery-lightbox.js.)
  */
 import { h, button } from './dom-helpers.js';
 
@@ -54,19 +54,5 @@ export function confirmAction({ title, message, confirmLabel = 'Delete', danger 
       h('div', { class: 'row end' }, button('Cancel', () => modal.close()), confirmBtn));
     const modal = openModal({ title, content, onClose: () => resolve(result) });
     confirmBtn.focus();
-  });
-}
-
-/** Full-size image viewer with a download link. */
-export function openLightbox({ url, title, caption }) {
-  const filename = url.split('/').pop() || 'image.png';
-  openModal({
-    title: title ?? 'Image',
-    wide: true,
-    content: h('figure', { class: 'lightbox' },
-      h('img', { src: url, alt: title ?? 'Generated image' }),
-      h('figcaption', { class: 'row between' },
-        h('span', { class: 'muted' }, caption ?? ''),
-        h('a', { class: 'btn', href: url, download: filename }, 'Download'))),
   });
 }

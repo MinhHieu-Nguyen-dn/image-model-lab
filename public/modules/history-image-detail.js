@@ -6,7 +6,8 @@
  */
 import { h, clear, emptyState, loadingState, statusBadge } from './dom-helpers.js';
 import { api, enc } from './api-client.js';
-import { openModal, openLightbox } from './modal-dialogs.js';
+import { openModal } from './modal-dialogs.js';
+import { openImageGallery } from './image-gallery-lightbox.js';
 import { formatBytes, formatDateTime } from './format-helpers.js';
 import { renderRatingButtons } from './image-rating-buttons.js';
 import { renderResultDetails } from './result-card.js';
@@ -23,12 +24,28 @@ function sourceRows(item, result, image) {
   return h('dl', { class: 'metrics' }, rows.flatMap(([k, v]) => [h('dt', {}, k), h('dd', {}, v)]));
 }
 
+/** Every image of the result, so the viewer can step through its siblings. */
+function galleryItems(item, result) {
+  return result.images.map((image, i) => ({
+    url: image.url, image, runId: item.runId, modelKey: item.modelKey, index: i,
+    title: `${item.modelLabel} · image ${i + 1}`,
+    caption: [image.width && image.height ? `${image.width}×${image.height}` : '', image.bytes ? formatBytes(image.bytes) : ''].filter(Boolean).join(' · '),
+  }));
+}
+
 function renderDetail(item, result, image, onChanged) {
   const title = `${item.modelLabel} · image ${item.imageIndex + 1}`;
+  const onRated = (runId, modelKey, index, rating) => {
+    recordRating(runId, modelKey, index, rating);
+    onChanged?.();
+  };
   return h('div', { class: 'image-detail' },
     h('button', {
       type: 'button', class: 'image-button image-detail-figure', title: 'Click to enlarge',
-      onClick: () => openLightbox({ url: image.url, title, caption: '' }),
+      onClick: () => openImageGallery({
+        items: galleryItems(item, result), index: item.imageIndex,
+        onRated: (it, rating) => onRated(it.runId, it.modelKey, it.index, rating),
+      }),
     }, h('img', { src: image.url, alt: title })),
     h('div', { class: 'image-detail-info stack' },
       h('div', { class: 'row between' },
@@ -40,10 +57,7 @@ function renderDetail(item, result, image, onChanged) {
         h('span', { class: 'field-label' }, 'Rating'),
         renderRatingButtons({
           runId: item.runId, modelKey: item.modelKey, index: item.imageIndex, image,
-          onRated: (rating) => {
-            recordRating(item.runId, item.modelKey, item.imageIndex, rating);
-            onChanged?.();
-          },
+          onRated: (rating) => onRated(item.runId, item.modelKey, item.imageIndex, rating),
         }),
         h('a', { class: 'small', href: image.url, download: image.url.split('/').pop() || 'image.png' }, 'Download')),
       sourceRows(item, result, image),

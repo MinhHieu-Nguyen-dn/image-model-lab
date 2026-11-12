@@ -5,7 +5,7 @@
  */
 import { h, statusBadge } from './dom-helpers.js';
 import { formatMs, formatBytes, formatCost, formatElapsed, toEpochMs } from './format-helpers.js';
-import { openLightbox } from './modal-dialogs.js';
+import { openImageGallery } from './image-gallery-lightbox.js';
 import { jsonDetails } from './compile-request-view.js';
 import { renderRatingButtons } from './image-rating-buttons.js';
 import { recordRating } from './run-controller.js';
@@ -15,12 +15,22 @@ const ACTIVE_STATUSES = new Set(['pending', 'running']);
 function renderImages(result, run) {
   const images = Array.isArray(result.images) ? result.images : [];
   if (!images.length) return null;
-  return h('div', { class: `card-images count-${Math.min(images.length, 4)}` }, images.map((img, i) => {
+  const items = images.map((img, i) => {
     const dims = img.width && img.height ? `${img.width}×${img.height}` : '';
-    const caption = [dims, img.bytes ? formatBytes(img.bytes) : ''].filter(Boolean).join(' · ');
-    const title = `${result.label || result.modelKey} · image ${i + 1}`;
+    return {
+      url: img.url, image: img, runId: run.id, modelKey: result.modelKey, index: i,
+      title: `${result.label || result.modelKey} · image ${i + 1}`,
+      caption: [dims, img.bytes ? formatBytes(img.bytes) : ''].filter(Boolean).join(' · '),
+    };
+  });
+  const onGalleryRated = (item, rating) => recordRating(item.runId, item.modelKey, item.index, rating);
+  return h('div', { class: `card-images count-${Math.min(images.length, 4)}` }, images.map((img, i) => {
+    const { title, caption } = items[i];
     return h('figure', { class: 'card-image' },
-      h('button', { type: 'button', class: 'image-button', title: 'Click to enlarge', onClick: () => openLightbox({ url: img.url, title, caption }) },
+      h('button', {
+        type: 'button', class: 'image-button', title: 'Click to enlarge',
+        onClick: () => openImageGallery({ items, index: i, onRated: onGalleryRated }),
+      },
         h('img', { src: img.url, alt: title, loading: 'lazy' })),
       h('figcaption', { class: 'row between small' },
         h('span', { class: 'muted' }, caption),

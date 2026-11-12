@@ -344,7 +344,20 @@ dialog.modal::backdrop { background: rgba(10, 12, 18, .5); }
 .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .modal-body { max-height: calc(100vh - 140px); overflow-y: auto; }
 .lightbox { margin: 0; display: flex; flex-direction: column; gap: 10px; }
-.lightbox img { max-width: 100%; max-height: calc(100vh - 220px); object-fit: contain; align-self: center; border-radius: 8px; }
+.lightbox-stage { position: relative; display: flex; justify-content: center; align-items: center; }
+.lightbox img { max-width: 100%; max-height: calc(100vh - 250px); object-fit: contain; align-self: center; border-radius: 8px; }
+.lightbox-nav {
+  position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--border); background: rgba(255, 255, 255, .92); color: var(--text);
+  font-size: 26px; line-height: 1; cursor: pointer; box-shadow: 0 1px 4px rgba(0, 0, 0, .25);
+}
+.lightbox-nav:hover:not(:disabled) { background: #fff; border-color: var(--accent); }
+.lightbox-nav:disabled { opacity: .35; cursor: default; }
+.lightbox-prev { left: 8px; }
+.lightbox-next { right: 8px; }
+.lightbox-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.lightbox-counter { font-weight: 600; font-variant-numeric: tabular-nums; }
+.lightbox-hint { margin: 0; text-align: center; }
 
 .toasts { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 2000; max-width: min(420px, calc(100vw - 32px)); }
 .toast {
