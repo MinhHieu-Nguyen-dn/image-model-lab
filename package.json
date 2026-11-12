@@ -4,6 +4,23 @@
   "private": true,
   "type": "module",
   "description": "Local studio for comparing Qwen Image models on Alibaba Cloud Model Studio",
+  "license": "MIT",
+  "author": "MinhHieu-Nguyen-dn",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MinhHieu-Nguyen-dn/qwen-image-studio.git"
+  },
+  "homepage": "https://github.com/MinhHieu-Nguyen-dn/qwen-image-studio#readme",
+  "bugs": {
+    "url": "https://github.com/MinhHieu-Nguyen-dn/qwen-image-studio/issues"
+  },
+  "keywords": [
+    "image-generation",
+    "qwen",
+    "model-studio",
+    "bun",
+    "local-first"
+  ],
   "scripts": {
     "start": "bun src/server/main.ts",
     "mock": "bun scripts/mock-model-studio.ts",
