@@ -32,7 +32,7 @@ export function createRefImagesPanel({ task, onRefsChanged, onRefRemoved }) {
     h('div', { class: 'row between' },
       h('div', {}, h('span', { class: 'field-label' }, 'Reference images'), ' ', status),
       button('Upload images', () => fileInput.click())),
-    h('p', { class: 'field-note' }, 'Order = image order sent to the model. Drag to reorder; drop or paste images here.'),
+    h('p', { class: 'field-note' }, 'Order = image order sent to the model. Drag to reorder; drop or paste images here. Images over 10 MB or 8000 px are scaled down automatically.'),
     list, fileInput);
   let dragId = null; // id of the ref being reordered
 
