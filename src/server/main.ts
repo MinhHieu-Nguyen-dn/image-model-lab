@@ -16,7 +16,7 @@ const app = startApp({
   imagesDir: process.env.IMAGES_DIR || "images",
   publicDir: process.env.PUBLIC_DIR || "public",
 });
-console.log(`Qwen Image Studio running at ${app.url} (data: ${app.ctx.imagesDir})`);
+console.log(`Image Model Lab running at ${app.url} (data: ${app.ctx.imagesDir})`);
 
 let stopping = false;
 async function shutdown(): Promise<void> {

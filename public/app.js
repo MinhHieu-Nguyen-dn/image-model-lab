@@ -1,5 +1,5 @@
 /**
- * Qwen Image Studio frontend entry point: wires the sidebar, main-area router and
+ * Image Model Lab frontend entry point: wires the sidebar, main-area router and
  * global drag/drop guards, then loads the catalog + projects and restores the last view.
  */
 import { state, on, memory } from './modules/app-state.js';

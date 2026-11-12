@@ -2,7 +2,7 @@
 
 ## Scope and threat model
 
-Qwen Image Studio is a single-user app that runs on your own machine. By design it:
+Image Model Lab is a single-user app that runs on your own machine. By design it:
 
 - listens only on `127.0.0.1` and rejects any `Host` or `Origin` it does not recognise (protection against DNS rebinding and cross-site requests from web pages you visit);
 - serves files only from `images/projects/`;

@@ -36,6 +36,7 @@ export function emit(event, payload) {
   }
 }
 
+// Legacy key prefix kept so existing browsers keep their saved UI state after the rename.
 const PREFIX = 'qwen-image-studio:';
 
 function readJson(key) {

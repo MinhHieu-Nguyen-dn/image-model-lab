@@ -1,18 +1,18 @@
 {
-  "name": "qwen-image-studio",
+  "name": "image-model-lab",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Local studio for comparing Qwen Image models on Alibaba Cloud Model Studio",
+  "description": "Local studio for comparing image-generation models side by side",
   "license": "MIT",
   "author": "MinhHieu-Nguyen-dn",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MinhHieu-Nguyen-dn/qwen-image-studio.git"
+    "url": "git+https://github.com/MinhHieu-Nguyen-dn/image-model-lab.git"
   },
-  "homepage": "https://github.com/MinhHieu-Nguyen-dn/qwen-image-studio#readme",
+  "homepage": "https://github.com/MinhHieu-Nguyen-dn/image-model-lab#readme",
   "bugs": {
-    "url": "https://github.com/MinhHieu-Nguyen-dn/qwen-image-studio/issues"
+    "url": "https://github.com/MinhHieu-Nguyen-dn/image-model-lab/issues"
   },
   "keywords": [
     "image-generation",

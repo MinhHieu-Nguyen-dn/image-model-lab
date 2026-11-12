@@ -1,4 +1,4 @@
-# Qwen Image Studio
+# Image Model Lab
 
 **English** · [Tiếng Việt](README.vi.md)
 
