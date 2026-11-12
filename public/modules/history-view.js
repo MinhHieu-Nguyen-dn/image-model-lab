@@ -3,7 +3,8 @@
  * prompt extend (on/off) and like/dislike. Project and task are multi-select. A counts table shows images, likes, dislikes and
  * unrated per model, each model expandable into prompt-extend on/off rows; it honours the project
  * and task filters only, so the counts stay visible while the grid is narrowed.
- * Clicking an image opens its detail dialog.
+ * Clicking an image opens its detail dialog. "Download ZIP" archives exactly the images the
+ * filters currently show.
  */
 import { h, clear, emptyState, loadingState } from './dom-helpers.js';
 import { api } from './api-client.js';
@@ -39,16 +40,21 @@ export function mountHistoryView(main) {
     void load();
   }
 
-  async function load() {
-    const id = ++requestId;
+  /** The current filters as a query string, shared by the list and the ZIP download. */
+  function filterQuery() {
     const query = new URLSearchParams();
     filters.projectIds.forEach((pid) => query.append('projectId', pid));
     filters.taskIds.forEach((tid) => query.append('taskId', tid));
     if (filters.promptExtend) query.set('promptExtend', filters.promptExtend);
     if (filters.modelKey) query.set('model', filters.modelKey);
     if (filters.rating) query.set('rating', filters.rating);
+    return query;
+  }
+
+  async function load() {
+    const id = ++requestId;
     try {
-      const res = await api.get(`/api/history?${query}`);
+      const res = await api.get(`/api/history?${filterQuery()}`);
       if (disposed || id !== requestId) return;
       // Remembered projects, tasks or a model may have been deleted or may not exist in this scope.
       const projectIds = filters.projectIds.filter((pid) => res.projects.some((p) => p.id === pid));
@@ -229,8 +235,15 @@ export function mountHistoryView(main) {
         any ? 'Change the project, model or rating filter.' : 'Images from your runs appear here.'));
       return;
     }
+    const count = data.images.length;
     gridHost.append(
-      h('p', { class: 'muted small' }, `${data.images.length} image${data.images.length === 1 ? '' : 's'}`),
+      h('div', { class: 'row between history-grid-bar' },
+        h('p', { class: 'muted small' }, `${count} image${count === 1 ? '' : 's'}`),
+        // A plain link: the server streams the archive and the browser saves it, so nothing is buffered in the page.
+        h('a', {
+          class: 'btn', href: `/api/history/download${filterQuery().size ? `?${filterQuery()}` : ''}`, download: '',
+          title: 'Download the images shown here as one ZIP',
+        }, `Download ZIP (${count})`)),
       h('div', { class: 'history-grid' }, data.images.map(renderTile)));
   }
 
