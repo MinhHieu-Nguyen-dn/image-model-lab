@@ -49,7 +49,6 @@ a { color: #1366ec; }
   position: sticky; top: 0; height: 100vh;
 }
 .brand { display: flex; flex-direction: column; gap: 2px; border-top: 3px solid var(--accent); margin: -16px -12px 0; padding: 14px 20px 12px; }
-.brand-org { color: var(--accent-ink); font-weight: 700; font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; }
 .brand-product { font-weight: 700; font-size: 1.05rem; }
 .sidebar-section { padding: 0 8px; }
 .project-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
