@@ -6,6 +6,8 @@ A local studio for comparing image-generation models side by side. Write one pro
 
 Everything runs on your machine: a Bun server bound to `127.0.0.1`, a SQLite file, and a vanilla-JS UI with no build step and no CDN. Your data lives in `./images/` and nothing is sent anywhere except to the model endpoint you configure.
 
+![One run compared across three Qwen Image models, each with its own latency, size and cost](docs/screenshots/model-comparison.jpg)
+
 ## Features
 
 - **Projects and tasks** to organise experiments; everything persists across restarts.
@@ -17,6 +19,10 @@ Everything runs on your machine: a Bun server bound to `127.0.0.1`, a SQLite fil
 - **History**: every image across projects, filterable by project, task, model, prompt-extend and rating; like/dislike (also with `l` / `k` in the viewer); arrow-key navigation; one-click ZIP of the filtered images.
 
 Default catalog: Qwen Image 3.0, 3.0 Pro, 2.1 Pro and 2.1 Turbo. Edit it in the UI to add or rename models.
+
+| Task editor: prompt, ordered reference images, model picker | History: counts by model, filters, ratings, ZIP export |
+| --- | --- |
+| ![Task editor with prompt, reference images and model selection](docs/screenshots/task-editor.jpg) | ![History view with per-model counts, filters and image grid](docs/screenshots/history.jpg) |
 
 ## Quick start
 

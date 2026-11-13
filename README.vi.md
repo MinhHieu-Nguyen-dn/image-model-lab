@@ -6,6 +6,8 @@ Studio chạy local để so sánh các mô hình tạo ảnh cạnh nhau. Viế
 
 Mọi thứ chạy trên máy bạn: server Bun chỉ lắng nghe `127.0.0.1`, một file SQLite, và giao diện JavaScript thuần, không cần build, không dùng CDN. Dữ liệu nằm trong `./images/` và không gửi đi đâu ngoài endpoint mô hình mà bạn cấu hình.
 
+![Một lần chạy so sánh ba mô hình Qwen Image, mỗi mô hình kèm latency, kích thước và chi phí](docs/screenshots/model-comparison.jpg)
+
 ## Tính năng
 
 - **Project và task** để tổ chức thí nghiệm; mọi thứ được lưu lại sau khi khởi động lại.
@@ -17,6 +19,10 @@ Mọi thứ chạy trên máy bạn: server Bun chỉ lắng nghe `127.0.0.1`, m
 - **History**: toàn bộ ảnh của mọi project, lọc theo project, task, model, prompt-extend và đánh giá; like/dislike (cũng bấm `l` / `k` trong trình xem); chuyển ảnh bằng phím mũi tên; tải một file ZIP chứa các ảnh đang lọc.
 
 Catalog mặc định: Qwen Image 3.0, 3.0 Pro, 2.1 Pro và 2.1 Turbo. Sửa trong UI để thêm hoặc đổi tên mô hình.
+
+| Soạn task: prompt, ảnh tham chiếu có thứ tự, chọn mô hình | History: số ảnh theo mô hình, bộ lọc, đánh giá, tải ZIP |
+| --- | --- |
+| ![Màn hình soạn task với prompt, ảnh tham chiếu và chọn mô hình](docs/screenshots/task-editor.jpg) | ![Màn hình History với số ảnh theo mô hình, bộ lọc và lưới ảnh](docs/screenshots/history.jpg) |
 
 ## Bắt đầu nhanh
 
